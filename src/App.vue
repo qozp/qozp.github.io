@@ -1,22 +1,49 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import NavBar from './components/NavBar.vue'
+import HomeContent from './components/content/HomeContent.vue'
+import AboutContent from './components/content/AboutContent.vue'
+import ProjectsContent from './components/content/ProjectsContent.vue'
+import SkillsContent from './components/content/SkillsContent.vue'
+import ResumeContent from './components/content/ResumeContent.vue'
+import ContactContent from './components/content/ContactContent.vue'
+</script>
 
 <template>
-  <div class="min-h-screen flex flex-col font-sans">
+  <div class="min-h-screen flex flex-col font-sans scroll-smooth">
     <!-- Navbar -->
-    <nav class="bg-gray-800 text-white px-6 py-4 flex gap-6">
-      <RouterLink to="/" class="hover:underline">Home</RouterLink>
-      <RouterLink to="/about" class="hover:underline">About</RouterLink>
-      <RouterLink to="/projects" class="hover:underline">Projects</RouterLink>
-      <RouterLink to="/resume" class="hover:underline">Resume</RouterLink>
-      <RouterLink to="/contact" class="hover:underline">Contact</RouterLink>
-    </nav>
+    <NavBar />
 
-    <!-- Main -->
-    <main class="flex-1 p-8">
-      <RouterView />
+    <!-- Sections -->
+    <main class="flex-1">
+      <section
+        id="home"
+        class="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-700 text-white"
+      >
+        <HomeContent />
+      </section>
+
+      <section id="about" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <AboutContent />
+      </section>
+
+      <section id="projects" class="min-h-screen flex items-center justify-center bg-white">
+        <ProjectsContent />
+      </section>
+
+      <section id="skills" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <SkillsContent />
+      </section>
+
+      <section id="resume" class="min-h-screen flex items-center justify-center bg-white">
+        <ResumeContent />
+      </section>
+
+      <section id="contact" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <ContactContent />
+      </section>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-400 text-center py-4">© 2025 Your Name</footer>
+    <footer class="bg-gray-900 text-gray-400 text-center py-4">© 2025 Isaiah D Pham</footer>
   </div>
 </template>
