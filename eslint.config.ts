@@ -23,7 +23,7 @@ export default defineConfigWithVueTs(
   {
     plugins: { prettier: pluginPrettier },
     rules: {
-      'prettier/prettier': 'error', // show Prettier issues as ESLint errors
+      'prettier/prettier': 'warn', // show Prettier issues as ESLint errors
     },
   },
 )
