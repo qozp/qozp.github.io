@@ -1,3 +1,7 @@
+# qozp.github.io - Personal Website
+
+### [Link to changelog](https://github.com/qozp/qozp.github.io/blob/main/CHANGELOG.md)
+
 # vue-project
 
 This template should help get you started developing with Vue 3 in Vite.
