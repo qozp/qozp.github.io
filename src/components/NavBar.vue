@@ -1,71 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 
-const sections = [
-  { id: 'home', label: 'Home' },
-  { id: 'about', label: 'About' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'skills', label: 'Skills' },
-  { id: 'resume', label: 'Resume' },
-  { id: 'contact', label: 'Contact' },
-]
-
-const activeSection = ref('home')
-let observer: IntersectionObserver | null = null
-
-// Track mobile menu state
 const isOpen = ref(false)
-
-onMounted(() => {
-  const options = { threshold: 0.5 }
-  observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        activeSection.value = entry.target.id
-      }
-    })
-  }, options)
-
-  sections.forEach((s) => {
-    const el = document.getElementById(s.id)
-    if (el) observer?.observe(el)
-  })
-})
-
-onBeforeUnmount(() => {
-  if (observer) observer.disconnect()
-})
-
-const scrollToSection = (id: string) => {
-  const el = document.getElementById(id)
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    isOpen.value = false // close menu on mobile after clicking
-  }
-}
 </script>
 
 <template>
   <nav class="fixed w-full bg-gray-800 text-white z-50 shadow-md">
     <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-      <!-- Logo / Name -->
-      <div class="text-lg font-bold">Isaiah Pham</div>
-
       <!-- Desktop Menu -->
-      <div class="hidden md:flex gap-8">
-        <button
-          v-for="s in sections"
-          :key="s.id"
-          @click="scrollToSection(s.id)"
-          class="relative transition-colors"
-          :class="activeSection === s.id ? 'text-blue-400 font-semibold' : 'hover:text-blue-300'"
+      <div class="hidden md:flex gap-8 items-center">
+        <RouterLink to="/" class="hover:text-blue-300" active-class="text-blue-400 font-semibold">
+          Home
+        </RouterLink>
+        <RouterLink
+          to="/countdown"
+          class="hover:text-blue-300"
+          active-class="text-blue-400 font-semibold"
         >
-          {{ s.label }}
-          <span
-            class="absolute left-0 -bottom-1 h-[2px] bg-blue-400 transition-all duration-300"
-            :class="activeSection === s.id ? 'w-full' : 'w-0'"
-          ></span>
-        </button>
+          Countdown
+        </RouterLink>
+
+        <!-- External Link Button -->
+        <a
+          href="https://isaiah-pham.github.io"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white text-sm font-semibold transition-colors"
+        >
+          Looking for Isaiah Pham?
+        </a>
       </div>
 
       <!-- Mobile Hamburger -->
@@ -78,15 +41,33 @@ const scrollToSection = (id: string) => {
 
     <!-- Mobile Dropdown -->
     <div v-if="isOpen" class="md:hidden bg-gray-900 flex flex-col items-center gap-6 py-6">
-      <button
-        v-for="s in sections"
-        :key="s.id"
-        @click="scrollToSection(s.id)"
-        class="text-lg transition-colors"
-        :class="activeSection === s.id ? 'text-blue-400 font-semibold' : 'hover:text-blue-300'"
+      <RouterLink
+        to="/"
+        class="text-lg hover:text-blue-300"
+        active-class="text-blue-400 font-semibold"
+        @click="isOpen = false"
       >
-        {{ s.label }}
-      </button>
+        Home
+      </RouterLink>
+      <RouterLink
+        to="/countdown"
+        class="text-lg hover:text-blue-300"
+        active-class="text-blue-400 font-semibold"
+        @click="isOpen = false"
+      >
+        Countdown
+      </RouterLink>
+
+      <!-- External Link for Mobile -->
+      <a
+        href="https://isaiah-pham.github.io"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white text-sm font-semibold transition-colors"
+        @click="isOpen = false"
+      >
+        Looking for Isaiah Pham?
+      </a>
     </div>
   </nav>
 </template>
