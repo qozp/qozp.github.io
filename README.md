@@ -1,4 +1,4 @@
-# qozp.github.io - Personal Website
+# [qozp.github.io](https://qozp.github.io/#/) - Personal Website
 
 ### [Link to changelog](https://github.com/qozp/qozp.github.io/blob/main/CHANGELOG.md)
 
