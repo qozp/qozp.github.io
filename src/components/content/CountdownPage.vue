@@ -2,14 +2,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import confetti from 'canvas-confetti'
 
-// Set target date here
 const targetDate = new Date('2025-10-09T23:59:59').getTime()
-
 const days = ref(0)
 const hours = ref(0)
 const minutes = ref(0)
 const seconds = ref(0)
-
 let interval: number
 
 const updateCountdown = () => {
@@ -28,7 +25,6 @@ const updateCountdown = () => {
   seconds.value = Math.floor((distance % (1000 * 60)) / 1000)
 }
 
-// Trigger confetti
 const launchConfetti = () => {
   confetti({
     particleCount: 200,
@@ -40,7 +36,7 @@ const launchConfetti = () => {
 onMounted(() => {
   updateCountdown()
   interval = setInterval(updateCountdown, 1000)
-  launchConfetti() // trigger confetti on page load
+  launchConfetti()
 })
 
 onUnmounted(() => {
@@ -50,25 +46,27 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-purple-900 to-indigo-700 text-white text-center"
+    class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-purple-900 to-indigo-700 text-white text-center px-4"
   >
     <h1 class="text-4xl font-bold mb-6 animate-pulse">Countdown to Fall Break!</h1>
-    <div class="grid grid-cols-4 gap-6 text-2xl font-mono">
-      <div>
-        <p class="text-6xl font-bold">{{ days }}</p>
-        <p class="uppercase">Days</p>
+
+    <!-- Responsive Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-lg">
+      <div class="flex flex-col items-center">
+        <p class="text-5xl sm:text-6xl font-bold">{{ days }}</p>
+        <p class="uppercase text-sm sm:text-base">Days</p>
       </div>
-      <div>
-        <p class="text-6xl font-bold">{{ hours }}</p>
-        <p class="uppercase">Hours</p>
+      <div class="flex flex-col items-center">
+        <p class="text-5xl sm:text-6xl font-bold">{{ hours }}</p>
+        <p class="uppercase text-sm sm:text-base">Hours</p>
       </div>
-      <div>
-        <p class="text-6xl font-bold">{{ minutes }}</p>
-        <p class="uppercase">Minutes</p>
+      <div class="flex flex-col items-center">
+        <p class="text-5xl sm:text-6xl font-bold">{{ minutes }}</p>
+        <p class="uppercase text-sm sm:text-base">Minutes</p>
       </div>
-      <div>
-        <p class="text-6xl font-bold">{{ seconds }}</p>
-        <p class="uppercase">Seconds</p>
+      <div class="flex flex-col items-center">
+        <p class="text-5xl sm:text-6xl font-bold">{{ seconds }}</p>
+        <p class="uppercase text-sm sm:text-base">Seconds</p>
       </div>
     </div>
   </div>
