@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import confetti from 'canvas-confetti'
 
 // Dates
-const startDate = new Date('2025-09-03T00:00:00').getTime()
+const startDate = new Date('2025-08-15T00:00:00').getTime()
 const targetDate = new Date('2025-10-09T23:59:59').getTime()
 
 // Flight coords (LAX → DCA as example)
