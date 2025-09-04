@@ -10,6 +10,6 @@ import NavBar from './components/NavBar.vue'
       <RouterView />
     </main>
 
-    <footer class="bg-gray-900 text-gray-400 text-center py-4">© 2025 Isaiah D Pham</footer>
+    <footer class="bg-gray-900 text-gray-400 text-center py-4">Isaiah Pham</footer>
   </div>
 </template>
