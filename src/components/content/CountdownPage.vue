@@ -1,16 +1,32 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import confetti from 'canvas-confetti'
+import * as turf from '@turf/turf'
+import { DateTime } from 'luxon'
 
 // Dates
-const startDate = new Date('2025-08-25T00:00:00').getTime()
-const targetDate = new Date('2025-10-09T23:59:59').getTime()
+const startDate = DateTime.fromISO('2025-08-25T00:00:00', { zone: 'America/New_York' }).toMillis()
+const targetDate = DateTime.fromISO('2025-10-09T06:10:00', { zone: 'America/New_York' }).toMillis()
 
 // Flight coords (LAX → DCA as example)
 const startCoords: [number, number] = [34.053666452, -117.600664264] // ONT
-const endCoords: [number, number] = [34.895671, -82.218859] // GSP
+const endCoords: [number, number] = [33.640411, -84.419853] // ATL
+
+// [athing]
+const start = turf.point([startCoords[1], startCoords[0]]) // note: lng, lat
+const end = turf.point([endCoords[1], endCoords[0]])
+
+// Generate great-circle line
+const greatCircle = turf.greatCircle(start, end, {
+  npoints: 100, // number of curve segments (more = smoother)
+})
+
+// Convert back to [lat, lng] for Leaflet
+const coords: [number, number][] = greatCircle.geometry.coordinates.map(
+  (c) => [c[1], c[0]] as [number, number],
+)
 
 // Countdown refs
 const days = ref(0)
@@ -22,6 +38,29 @@ let interval: number
 // Map state
 let map: L.Map
 let planeMarker: L.Marker
+
+const now = ref<number | null>(null)
+
+const planePosition = computed<[number, number] | null>(() => {
+  if (now.value === null) return null // not ready yet
+
+  const progress = Math.min(1, Math.max(0, (now.value - startDate) / (targetDate - startDate)))
+
+  // Smooth index along coords
+  const exactIndex = progress * (coords.length - 1)
+  const lower = Math.floor(exactIndex)
+  const upper = Math.min(coords.length - 1, lower + 1)
+  const t = exactIndex - lower
+
+  // Linear interpolate between two points
+  const [lat1, lng1] = coords[lower]
+  const [lat2, lng2] = coords[upper]
+
+  const lat = lat1 + (lat2 - lat1) * t
+  const lng = lng1 + (lng2 - lng1) * t
+
+  return [lat, lng] as [number, number]
+})
 
 const updateCountdown = () => {
   const now = new Date().getTime()
@@ -37,19 +76,6 @@ const updateCountdown = () => {
   hours.value = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
   minutes.value = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
   seconds.value = Math.floor((distance % (1000 * 60)) / 1000)
-
-  updatePlanePosition(now)
-}
-
-const updatePlanePosition = (now: number) => {
-  const progress = Math.min(1, Math.max(0, (now - startDate) / (targetDate - startDate)))
-
-  const lat = startCoords[0] + (endCoords[0] - startCoords[0]) * progress
-  const lng = startCoords[1] + (endCoords[1] - startCoords[1]) * progress
-
-  if (planeMarker) {
-    planeMarker.setLatLng([lat, lng])
-  }
 }
 
 const launchConfetti = () => {
@@ -61,30 +87,48 @@ const launchConfetti = () => {
 }
 
 onMounted(() => {
+  now.value = Date.now()
+
   // Init map
-  map = L.map('map').setView(startCoords, 4)
+  map = L.map('map').setView(planePosition.value!, 4)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
   }).addTo(map)
 
-  // Plane icon
   const planeIcon = L.divIcon({
-    html: '✈️',
-    className: '',
-    iconSize: [30, 30],
+    html: `<div class="w-8 h-8 flex items-center justify-center">✈️</div>`,
+    className: '', // remove default leaflet styles
+    iconSize: [32, 32], // match Tailwind w-8/h-8
+    iconAnchor: [16, 16], // center of the div
   })
 
-  planeMarker = L.marker(startCoords, { icon: planeIcon }).addTo(map)
+  const route = L.polyline(coords, {
+    color: '#38bdf8',
+    weight: 2,
+    opacity: 0.6,
+  }).addTo(map)
+
+  const midPoint = route.getBounds().getCenter()
+
+  planeMarker = L.marker(midPoint, { icon: planeIcon }).addTo(map)
 
   // Start countdown
   updateCountdown()
-  interval = setInterval(updateCountdown, 1000)
+  interval = setInterval(() => {
+    now.value = Date.now()
+  }, 1000)
   launchConfetti()
 })
 
 onUnmounted(() => {
   clearInterval(interval)
   map.remove()
+})
+
+watch(planePosition, (pos) => {
+  if (planeMarker) {
+    planeMarker.setLatLng(pos!)
+  }
 })
 </script>
 
