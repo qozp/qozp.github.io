@@ -6,6 +6,33 @@ import confetti from 'canvas-confetti'
 import * as turf from '@turf/turf'
 import { DateTime } from 'luxon'
 
+function generateFlightCoords(
+  start: [number, number],
+  end: [number, number],
+  npoints = 100,
+): [number, number][] {
+  const startPoint = turf.point([start[1], start[0]]) // lng, lat
+  const endPoint = turf.point([end[1], end[0]])
+  const greatCircle = turf.greatCircle(startPoint, endPoint, { npoints })
+  return greatCircle.geometry.coordinates.map((c) => [c[1], c[0]] as [number, number])
+}
+
+// Generate driving coordinates along a straight line
+function generateDriveCoords(
+  start: [number, number],
+  end: [number, number],
+  npoints = 100,
+): [number, number][] {
+  const coords: [number, number][] = []
+  for (let i = 0; i < npoints; i++) {
+    const t = i / (npoints - 1)
+    const lat = start[0] + (end[0] - start[0]) * t
+    const lng = start[1] + (end[1] - start[1]) * t
+    coords.push([lat, lng])
+  }
+  return coords
+}
+
 // Dates
 const startDate = DateTime.fromISO('2025-08-25T00:00:00', { zone: 'America/New_York' }).toMillis()
 const targetDate = DateTime.fromISO('2025-10-09T06:10:00', { zone: 'America/New_York' }).toMillis()
@@ -13,20 +40,12 @@ const targetDate = DateTime.fromISO('2025-10-09T06:10:00', { zone: 'America/New_
 // Flight coords (LAX → DCA as example)
 const startCoords: [number, number] = [34.053666452, -117.600664264] // ONT
 const endCoords: [number, number] = [33.640411, -84.419853] // ATL
+const flightCoords = generateFlightCoords(startCoords, endCoords, 100)
 
-// [athing]
-const start = turf.point([startCoords[1], startCoords[0]]) // note: lng, lat
-const end = turf.point([endCoords[1], endCoords[0]])
-
-// Generate great-circle line
-const greatCircle = turf.greatCircle(start, end, {
-  npoints: 100, // number of curve segments (more = smoother)
-})
-
-// Convert back to [lat, lng] for Leaflet
-const coords: [number, number][] = greatCircle.geometry.coordinates.map(
-  (c) => [c[1], c[0]] as [number, number],
-)
+// Drive Coords
+const driveStartCoords: [number, number] = [34.69497691842614, -82.80176871880728] // Clemson edge
+const driveEndCoords: [number, number] = [33.640411, -84.419853] // ATL
+const driveCoords = generateDriveCoords(driveStartCoords, driveEndCoords, 100)
 
 // Countdown refs
 const days = ref(0)
@@ -38,6 +57,7 @@ let interval: number
 // Map state
 let map: L.Map
 let planeMarker: L.Marker
+let carMarker: L.Marker
 
 const now = ref<number | null>(null)
 
@@ -46,20 +66,32 @@ const planePosition = computed<[number, number] | null>(() => {
 
   const progress = Math.min(1, Math.max(0, (now.value - startDate) / (targetDate - startDate)))
 
-  // Smooth index along coords
-  const exactIndex = progress * (coords.length - 1)
+  // Smooth index along flightCoords
+  const exactIndex = progress * (flightCoords.length - 1)
   const lower = Math.floor(exactIndex)
-  const upper = Math.min(coords.length - 1, lower + 1)
+  const upper = Math.min(flightCoords.length - 1, lower + 1)
   const t = exactIndex - lower
 
   // Linear interpolate between two points
-  const [lat1, lng1] = coords[lower]
-  const [lat2, lng2] = coords[upper]
+  const [lat1, lng1] = flightCoords[lower]
+  const [lat2, lng2] = flightCoords[upper]
 
   const lat = lat1 + (lat2 - lat1) * t
   const lng = lng1 + (lng2 - lng1) * t
 
   return [lat, lng] as [number, number]
+})
+
+const carPosition = computed<[number, number] | null>(() => {
+  if (!now.value) return null
+  const progress = Math.min(1, Math.max(0, (now.value - startDate) / (targetDate - startDate)))
+  const exactIndex = progress * (driveCoords.length - 1)
+  const lower = Math.floor(exactIndex)
+  const upper = Math.min(driveCoords.length - 1, lower + 1)
+  const t = exactIndex - lower
+  const [lat1, lng1] = driveCoords[lower]
+  const [lat2, lng2] = driveCoords[upper]
+  return [lat1 + (lat2 - lat1) * t, lng1 + (lng2 - lng1) * t]
 })
 
 const updateCountdown = () => {
@@ -102,21 +134,36 @@ onMounted(() => {
     iconAnchor: [16, 16], // center of the div
   })
 
-  const route = L.polyline(coords, {
+  const carIcon = L.divIcon({
+    html: `<div class="w-8 h-8 flex items-center justify-center">🚗</div>`,
+    className: '',
+    iconSize: [32, 32],
+    iconAnchor: [16, 20],
+  })
+
+  const route = L.polyline(flightCoords, {
     color: '#38bdf8',
     weight: 2,
     opacity: 0.6,
   }).addTo(map)
 
+  L.polyline(driveCoords, { color: '#f97316', weight: 2, opacity: 0.6 }).addTo(map)
+
   const midPoint = route.getBounds().getCenter()
 
   planeMarker = L.marker(midPoint, { icon: planeIcon }).addTo(map)
+  carMarker = L.marker(carPosition.value!, { icon: carIcon }).addTo(map)
+
+  const update = () => {
+    now.value = Date.now()
+    if (planeMarker) planeMarker.setLatLng(planePosition.value!)
+    if (carMarker) carMarker.setLatLng(carPosition.value!)
+    updateCountdown()
+  }
 
   // Start countdown
   updateCountdown()
-  interval = setInterval(() => {
-    now.value = Date.now()
-  }, 1000)
+  interval = window.setInterval(update, 1000)
   launchConfetti()
 })
 
@@ -126,9 +173,10 @@ onUnmounted(() => {
 })
 
 watch(planePosition, (pos) => {
-  if (planeMarker) {
-    planeMarker.setLatLng(pos!)
-  }
+  if (planeMarker && pos) planeMarker.setLatLng(pos)
+})
+watch(carPosition, (pos) => {
+  if (carMarker && pos) carMarker.setLatLng(pos)
 })
 </script>
 
