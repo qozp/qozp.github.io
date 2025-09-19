@@ -38,7 +38,7 @@ const startDate = DateTime.fromISO('2025-08-25T00:00:00', { zone: 'America/New_Y
 const targetDate = DateTime.fromISO('2025-10-09T06:10:00', { zone: 'America/New_York' }).toMillis()
 
 // Flight coords (LAX → DCA as example)
-const startCoords: [number, number] = [34.053666452, -117.600664264] // ONT
+const startCoords: [number, number] = [33.942791, -118.410042] // LAX
 const endCoords: [number, number] = [33.640411, -84.419853] // ATL
 const flightCoords = generateFlightCoords(startCoords, endCoords, 100)
 
