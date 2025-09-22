@@ -22,7 +22,7 @@ const isOpen = ref(false)
 
         <RouterLink
           to="/slots"
-          class="text-lg hover:text-blue-300"
+          class="hover:text-blue-300"
           active-class="text-blue-400 font-semibold"
           @click="isOpen = false"
         >
