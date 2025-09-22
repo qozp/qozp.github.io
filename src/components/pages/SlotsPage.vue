@@ -137,8 +137,8 @@ function spin() {
         @click="!spinning && pullLever()"
       >
         <div
-          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2"
-          :class="leverPulled ? 'top-[140px]' : 'top-0 transition-all duration-300'"
+          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2 transition-all duration-700 ease-linear"
+          :class="leverPulled ? 'top-[140px]' : 'top-0'"
         ></div>
       </div>
     </div>
