@@ -76,7 +76,7 @@ onMounted(() => {})
           <div
             v-for="(symbol, idx) in reel"
             :key="idx + '-' + symbol"
-            class="w-20 h-20 flex items-center justify-center text-3xl font-bold"
+            class="w-20 h-6 flex items-center justify-center text-3xl font-bold"
           >
             {{ symbol }}
           </div>
