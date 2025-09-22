@@ -1,62 +1,93 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import confetti from 'canvas-confetti'
 
-const symbols = ['🍒', '🍋', '🍊', '🍇', '⭐', '7️⃣']
-const reels = ref<string[][]>([['❔'], ['❔'], ['❔']])
-const result = ref<string>('')
+// Symbols with weights
+const symbols = [
+  { symbol: '🍒', weight: 100 },
+  { symbol: '🍋', weight: 100 },
+  { symbol: '🍊', weight: 100 },
+  { symbol: '🍇', weight: 100 },
+  { symbol: '⭐', weight: 75 },
+  { symbol: '7️⃣', weight: 50 },
+]
+
+let nextId = 0
+const reelCount = 3
+const cellCount = 3
 const spinning = ref(false)
+const result = ref('')
+
+// Initialize reels with 3 symbols each
+const reels = ref<{ symbol: string; id: number }[][]>(
+  Array.from({ length: reelCount }, () =>
+    Array.from({ length: cellCount }, () => ({ symbol: '❔', id: nextId++ })),
+  ),
+)
+
+// Weighted random symbol
+function weightedRandomSymbol() {
+  const totalWeight = symbols.reduce((sum, s) => sum + s.weight, 0)
+  let random = Math.random() * totalWeight
+  for (const s of symbols) {
+    if (random < s.weight) return s.symbol
+    random -= s.weight
+  }
+  return symbols[0].symbol
+}
+
+const spinTimerMin = 1000
+const spinTimerMax = 2000
+const stagger = 250 // consistent delay between reels
 
 function spin() {
-  result.value = ''
+  if (spinning.value) return
   spinning.value = true
-  reels.value = [['❔'], ['❔'], ['❔']]
+  result.value = ''
+  let stoppedCount = 0
 
-  reels.value.forEach((_, i) => {
-    let count = 0
-    const interval = setInterval(() => {
-      reels.value[i].push(symbols[Math.floor(Math.random() * symbols.length)])
-      if (reels.value[i].length > 1) {
-        reels.value[i].shift()
-      }
-      count++
-    }, 120)
+  // Randomized spin duration per reel
+  const spinDuration = Math.floor(Math.random() * (spinTimerMax - spinTimerMin)) + spinTimerMin
 
+  reels.value.forEach((reel, i) => {
+    reel.push({ symbol: weightedRandomSymbol(), id: nextId++ }) // extra symbol for smooth spin
+
+    const interval = setInterval(
+      () => {
+        reel.push({ symbol: weightedRandomSymbol(), id: nextId++ })
+        if (reel.length > 4) reel.shift() // maintain 4 symbols while spinning
+      },
+      60 + i * 10,
+    )
+
+    // Stop each reel with consistent stagger
     setTimeout(
       () => {
         clearInterval(interval)
-        reels.value[i] = [symbols[Math.floor(Math.random() * symbols.length)]]
+        while (reel.length > 3) reel.shift() // shrink to 3 symbols
+        for (let j = 0; j < 3; j++) {
+          reel[j] = { symbol: weightedRandomSymbol(), id: nextId++ }
+        }
 
-        if (i === reels.value.length - 1) {
-          spinning.value = false
-          if (reels.value.every((r) => r[0] === reels.value[0][0])) {
-            result.value = '🎉 Jackpot! You won!'
-            launchConfetti()
-          } else {
-            result.value = 'Try again!'
-          }
+        stoppedCount++
+
+        if (stoppedCount === reelCount) {
+          const middleSymbols = reels.value.map((r) => r[1].symbol)
+          setTimeout(() => {
+            if (middleSymbols.every((s) => s === middleSymbols[0])) {
+              result.value = '🎉 Jackpot! You won!'
+              confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } })
+            } else {
+              result.value = '🙁 Try again!'
+            }
+            spinning.value = false
+          }, stagger)
         }
       },
-      1000 + i * 600,
+      spinDuration + i * stagger,
     )
   })
-
-  //   reels.value = [
-  //     symbols[Math.floor(Math.random() * symbols.length)],
-  //     symbols[Math.floor(Math.random() * symbols.length)],
-  //     symbols[Math.floor(Math.random() * symbols.length)],
-  //   ]
 }
-
-const launchConfetti = () => {
-  confetti({
-    particleCount: 200,
-    spread: 70,
-    origin: { y: 0.6 },
-  })
-}
-
-onMounted(() => {})
 </script>
 
 <template>
@@ -65,46 +96,48 @@ onMounted(() => {})
   >
     <h1 class="text-4xl font-bold mb-6">🎰 Slot Machine</h1>
 
-    <!-- Reels -->
+    <!-- Reels container -->
     <div class="flex space-x-4 mb-6">
       <div
-        v-for="(reel, index) in reels"
-        :key="index"
-        class="w-20 h-20 flex items-center justify-center bg-gray-800 rounded-lg text-3xl font-bold"
+        v-for="(reel, i) in reels"
+        :key="i"
+        class="w-20 h-60 overflow-hidden bg-gray-800 rounded-lg"
       >
         <transition-group name="slide" tag="div" class="flex flex-col">
           <div
-            v-for="(symbol, idx) in reel"
-            :key="idx + '-' + symbol"
-            class="w-20 h-6 flex items-center justify-center text-3xl font-bold"
+            v-for="cell in reel"
+            :key="cell.id"
+            class="w-20 h-20 flex items-center justify-center text-3xl font-bold"
+            :class="{
+              'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50 rounded-lg':
+                !spinning && reel.indexOf(cell) === 1,
+            }"
           >
-            {{ symbol }}
+            {{ cell.symbol }}
           </div>
         </transition-group>
       </div>
     </div>
 
-    <!-- Spin Button -->
+    <!-- Spin button -->
     <button
       @click="spin"
-      :disable="spinning"
+      :disabled="spinning"
       class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-lg text-lg font-semibold transition-colors"
     >
       {{ spinning ? 'Spinning...' : 'Spin' }}
     </button>
 
     <!-- Result -->
-    <p v-if="result" class="mt-4 text-xl font-medium">
-      {{ result }}
-    </p>
+    <p v-if="result" class="mt-4 text-xl font-medium">{{ result }}</p>
   </div>
 </template>
 
 <style scoped>
-/* smooth vertical sliding */
+/* Transition-group sliding */
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.15s linear;
 }
 .slide-enter-from {
   transform: translateY(100%);
