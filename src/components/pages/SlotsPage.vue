@@ -18,6 +18,42 @@ const cellCount = 3
 const spinning = ref(false)
 const result = ref('')
 const leverPulled = ref(false)
+const leverPosition = ref(0) // 0 = top, 140 = bottom
+let isDragging = false
+let startY = 0
+
+function startDrag(e: MouseEvent | TouchEvent) {
+  if (spinning.value) return
+  isDragging = true
+  startY = 'touches' in e ? e.touches[0].clientY : e.clientY
+  window.addEventListener('mousemove', onDrag)
+  window.addEventListener('mouseup', endDrag)
+  window.addEventListener('touchmove', onDrag)
+  window.addEventListener('touchend', endDrag)
+}
+
+function onDrag(e: MouseEvent | TouchEvent) {
+  if (!isDragging) return
+  const currentY = 'touches' in e ? e.touches[0].clientY : e.clientY
+  const diff = currentY - startY
+  // Clamp between 0 and 140px
+  leverPosition.value = Math.min(140, Math.max(0, diff))
+}
+
+function endDrag() {
+  if (!isDragging) return
+  isDragging = false
+
+  if (leverPosition.value > 80) {
+    // pulled far enough → spin
+    pullLever()
+  }
+  leverPosition.value = 0 // snap back
+  window.removeEventListener('mousemove', onDrag)
+  window.removeEventListener('mouseup', endDrag)
+  window.removeEventListener('touchmove', onDrag)
+  window.removeEventListener('touchend', endDrag)
+}
 
 function pullLever() {
   if (spinning.value) return
@@ -134,17 +170,19 @@ function spin() {
       <div
         class="w-6 h-40 bg-gray-600 rounded-full relative select-none"
         :class="spinning ? 'cursor-default' : 'cursor-pointer'"
+        @mousedown="startDrag"
+        @touchstart.prevent="startDrag"
         @click="!spinning && pullLever()"
       >
         <div
-          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2 transition-all duration-250 ease-linear"
-          :class="leverPulled ? 'top-[140px]' : 'top-0'"
+          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2 transition-[top] duration-200 ease-out"
+          :style="{ top: leverPulled ? '140px' : leverPosition + 'px' }"
         ></div>
       </div>
     </div>
 
     <button
-      @click="spin"
+      @click="pullLever"
       :disabled="spinning"
       class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-lg text-lg font-semibold transition-colors"
       :class="spinning ? 'cursor-default' : 'cursor-pointer'"
