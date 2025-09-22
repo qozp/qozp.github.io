@@ -17,6 +17,16 @@ const reelCount = 3
 const cellCount = 3
 const spinning = ref(false)
 const result = ref('')
+const leverPulled = ref(false)
+
+function pullLever() {
+  if (spinning.value) return
+  leverPulled.value = true
+  setTimeout(() => {
+    spin()
+    leverPulled.value = false
+  }, 300) // lever snap-back delay
+}
 
 // Initialize reels with 3 symbols each
 const reels = ref<{ symbol: string; id: number }[][]>(
@@ -96,26 +106,40 @@ function spin() {
   >
     <h1 class="text-4xl font-bold mb-6">🎰 Slot Machine</h1>
 
-    <!-- Reels container -->
-    <div class="flex space-x-4 mb-6">
+    <div class="flex space-x-6 mb-6 items-center">
+      <!-- Reels -->
+      <div class="flex space-x-4">
+        <div
+          v-for="(reel, i) in reels"
+          :key="i"
+          class="w-20 h-60 overflow-hidden bg-gray-800 rounded-lg"
+        >
+          <transition-group name="slide" tag="div" class="flex flex-col">
+            <div
+              v-for="item in reel"
+              :key="item.id"
+              class="w-20 h-20 flex items-center justify-center text-3xl font-bold"
+              :class="{
+                'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50 rounded-lg':
+                  !spinning && reel.indexOf(item) === 1,
+              }"
+            >
+              {{ item.symbol }}
+            </div>
+          </transition-group>
+        </div>
+      </div>
+
+      <!-- Lever -->
       <div
-        v-for="(reel, i) in reels"
-        :key="i"
-        class="w-20 h-60 overflow-hidden bg-gray-800 rounded-lg"
+        class="w-6 h-40 bg-gray-600 rounded-full relative select-none"
+        :class="spinning ? 'cursor-default' : 'cursor-pointer'"
+        @click="!spinning && pullLever()"
       >
-        <transition-group name="slide" tag="div" class="flex flex-col">
-          <div
-            v-for="cell in reel"
-            :key="cell.id"
-            class="w-20 h-20 flex items-center justify-center text-3xl font-bold"
-            :class="{
-              'ring-4 ring-yellow-400 shadow-lg shadow-yellow-500/50 rounded-lg':
-                !spinning && reel.indexOf(cell) === 1,
-            }"
-          >
-            {{ cell.symbol }}
-          </div>
-        </transition-group>
+        <div
+          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2"
+          :class="leverPulled ? 'top-[140px]' : 'top-0 transition-all duration-300'"
+        ></div>
       </div>
     </div>
 
@@ -124,12 +148,17 @@ function spin() {
       @click="spin"
       :disabled="spinning"
       class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-lg text-lg font-semibold transition-colors"
+      :class="spinning ? 'cursor-default' : 'cursor-pointer'"
     >
       {{ spinning ? 'Spinning...' : 'Spin' }}
     </button>
 
     <!-- Result -->
-    <p v-if="result" class="mt-4 text-xl font-medium">{{ result }}</p>
+    <div class="mt-4 h-8 flex items-center justify-center">
+      <p v-if="result" class="text-xl font-medium">
+        {{ result }}
+      </p>
+    </div>
   </div>
 </template>
 
@@ -137,18 +166,29 @@ function spin() {
 /* Transition-group sliding */
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.15s linear;
+  transition:
+    transform 0.25s ease-in-out,
+    opacity 0.25s linear;
 }
 .slide-enter-from {
-  transform: translateY(100%);
+  transform: translateY(50%);
+  opacity: 0.75;
 }
 .slide-enter-to {
-  transform: translateY(0%);
+  transform: translateY(0);
+  opacity: 1;
 }
 .slide-leave-from {
-  transform: translateY(0%);
+  transform: translateY(0);
+  opacity: 1;
 }
 .slide-leave-to {
-  transform: translateY(-100%);
+  transform: translateY(-50%);
+  opacity: 0.75;
+}
+
+/* Lever transitions */
+.lever-knob {
+  transition: top 0.3s ease-in-out;
 }
 </style>
