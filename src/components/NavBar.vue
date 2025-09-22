@@ -20,6 +20,15 @@ const isOpen = ref(false)
           Countdown
         </RouterLink>
 
+        <RouterLink
+          to="/slots"
+          class="text-lg hover:text-blue-300"
+          active-class="text-blue-400 font-semibold"
+          @click="isOpen = false"
+        >
+          Slots
+        </RouterLink>
+
         <!-- External Link Button -->
         <a
           href="https://isaiah-pham.github.io"
@@ -49,6 +58,7 @@ const isOpen = ref(false)
       >
         Home
       </RouterLink>
+
       <RouterLink
         to="/countdown"
         class="text-lg hover:text-blue-300"
@@ -56,6 +66,15 @@ const isOpen = ref(false)
         @click="isOpen = false"
       >
         Countdown
+      </RouterLink>
+
+      <RouterLink
+        to="/slots"
+        class="text-lg hover:text-blue-300"
+        active-class="text-blue-400 font-semibold"
+        @click="isOpen = false"
+      >
+        Slots
       </RouterLink>
 
       <!-- External Link for Mobile -->
