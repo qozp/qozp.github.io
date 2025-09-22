@@ -67,7 +67,7 @@ function spin() {
         reel.push({ symbol: weightedRandomSymbol(), id: nextId++ })
         if (reel.length > 4) reel.shift() // maintain 4 symbols while spinning
       },
-      60 + i * 10,
+      100 + i * 10,
     )
 
     // Stop each reel with consistent stagger
@@ -114,7 +114,7 @@ function spin() {
           :key="i"
           class="w-20 h-60 overflow-hidden bg-gray-800 rounded-lg"
         >
-          <transition-group name="slide" tag="div" class="flex flex-col">
+          <transition-group name="slide" tag="div" class="flex flex-col-reverse">
             <div
               v-for="item in reel"
               :key="item.id"
@@ -137,13 +137,12 @@ function spin() {
         @click="!spinning && pullLever()"
       >
         <div
-          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2 transition-all duration-700 ease-linear"
+          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2 transition-all duration-250 ease-linear"
           :class="leverPulled ? 'top-[140px]' : 'top-0'"
         ></div>
       </div>
     </div>
 
-    <!-- Spin button -->
     <button
       @click="spin"
       :disabled="spinning"
@@ -153,7 +152,6 @@ function spin() {
       {{ spinning ? 'Spinning...' : 'Spin' }}
     </button>
 
-    <!-- Result -->
     <div class="mt-4 h-8 flex items-center justify-center">
       <p v-if="result" class="text-xl font-medium">
         {{ result }}
@@ -163,7 +161,6 @@ function spin() {
 </template>
 
 <style scoped>
-/* Transition-group sliding */
 .slide-enter-active,
 .slide-leave-active {
   transition:
@@ -171,7 +168,7 @@ function spin() {
     opacity 0.25s linear;
 }
 .slide-enter-from {
-  transform: translateY(50%);
+  transform: translateY(-50%); /* slide in from top */
   opacity: 0.75;
 }
 .slide-enter-to {
@@ -183,11 +180,10 @@ function spin() {
   opacity: 1;
 }
 .slide-leave-to {
-  transform: translateY(-50%);
+  transform: translateY(50%); /* slide out to bottom */
   opacity: 0.75;
 }
 
-/* Lever transitions */
 .lever-knob {
   transition: top 0.3s ease-in-out;
 }
