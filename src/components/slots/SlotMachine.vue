@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import confetti from 'canvas-confetti'
+import Lever from './SlotLever.vue'
 
 // Symbols with weights
 const symbols = [
@@ -17,61 +18,23 @@ const reelCount = 3
 const cellCount = 3
 const spinning = ref(false)
 const result = ref('')
-const leverPulled = ref(false)
-const leverPosition = ref(0) // 0 = top, 140 = bottom
-let isDragging = false
-let startY = 0
 
-function startDrag(e: MouseEvent | TouchEvent) {
-  if (spinning.value) return
-  isDragging = true
-  startY = 'touches' in e ? e.touches[0].clientY : e.clientY
-  window.addEventListener('mousemove', onDrag)
-  window.addEventListener('mouseup', endDrag)
-  window.addEventListener('touchmove', onDrag)
-  window.addEventListener('touchend', endDrag)
+// Balance & betting
+const betAmount = 100
+const balance = ref(Number(localStorage.getItem('balance')) || 1000)
+function updateBalance(newBalance: number) {
+  balance.value = newBalance
+  localStorage.setItem('balance', balance.value.toString())
 }
 
-function onDrag(e: MouseEvent | TouchEvent) {
-  if (!isDragging) return
-  const currentY = 'touches' in e ? e.touches[0].clientY : e.clientY
-  const diff = currentY - startY
-  // Clamp between 0 and 140px
-  leverPosition.value = Math.min(140, Math.max(0, diff))
-}
-
-function endDrag() {
-  if (!isDragging) return
-  isDragging = false
-
-  if (leverPosition.value > 80) {
-    // pulled far enough → spin
-    pullLever()
-  }
-  leverPosition.value = 0 // snap back
-  window.removeEventListener('mousemove', onDrag)
-  window.removeEventListener('mouseup', endDrag)
-  window.removeEventListener('touchmove', onDrag)
-  window.removeEventListener('touchend', endDrag)
-}
-
-function pullLever() {
-  if (spinning.value) return
-  leverPulled.value = true
-  setTimeout(() => {
-    spin()
-    leverPulled.value = false
-  }, 300) // lever snap-back delay
-}
-
-// Initialize reels with 3 symbols each
+// Initialize reels
 const reels = ref<{ symbol: string; id: number }[][]>(
   Array.from({ length: reelCount }, () =>
     Array.from({ length: cellCount }, () => ({ symbol: '❔', id: nextId++ })),
   ),
 )
 
-// Weighted random symbol
+// Weighted symbol picker
 function weightedRandomSymbol() {
   const totalWeight = symbols.reduce((sum, s) => sum + s.weight, 0)
   let random = Math.random() * totalWeight
@@ -83,45 +46,50 @@ function weightedRandomSymbol() {
 }
 
 const spinTimerMin = 1000
-const spinTimerMax = 2000
-const stagger = 250 // consistent delay between reels
+const spinTimerMax = 1500
+const stagger = 250
 
 function spin() {
   if (spinning.value) return
+  if (balance.value < betAmount) {
+    result.value = '💸 Not enough balance!'
+    return
+  }
+
+  // Deduct bet
+  updateBalance(balance.value - betAmount)
+
   spinning.value = true
   result.value = ''
   let stoppedCount = 0
-
-  // Randomized spin duration per reel
   const spinDuration = Math.floor(Math.random() * (spinTimerMax - spinTimerMin)) + spinTimerMin
 
   reels.value.forEach((reel, i) => {
-    reel.push({ symbol: weightedRandomSymbol(), id: nextId++ }) // extra symbol for smooth spin
+    reel.push({ symbol: weightedRandomSymbol(), id: nextId++ })
 
     const interval = setInterval(
       () => {
         reel.push({ symbol: weightedRandomSymbol(), id: nextId++ })
-        if (reel.length > 4) reel.shift() // maintain 4 symbols while spinning
+        if (reel.length > 4) reel.shift()
       },
-      100 + i * 10,
+      80 + i * 10,
     )
 
-    // Stop each reel with consistent stagger
     setTimeout(
       () => {
         clearInterval(interval)
-        while (reel.length > 3) reel.shift() // shrink to 3 symbols
+        while (reel.length > 3) reel.shift()
         for (let j = 0; j < 3; j++) {
           reel[j] = { symbol: weightedRandomSymbol(), id: nextId++ }
         }
 
         stoppedCount++
-
         if (stoppedCount === reelCount) {
           const middleSymbols = reels.value.map((r) => r[1].symbol)
           setTimeout(() => {
             if (middleSymbols.every((s) => s === middleSymbols[0])) {
-              result.value = '🎉 Jackpot! You won!'
+              result.value = `🎉 Jackpot! You won ${betAmount * 2}!`
+              updateBalance(balance.value + betAmount * 2)
               confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } })
             } else {
               result.value = '🙁 Try again!'
@@ -134,13 +102,17 @@ function spin() {
     )
   })
 }
+
+function handlePull() {
+  spin()
+}
 </script>
 
 <template>
-  <div
-    class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-gray-700 text-white"
-  >
-    <h1 class="text-4xl font-bold mb-6">🎰 Slot Machine</h1>
+  <div class="flex flex-col items-center">
+    <p class="mb-4 text-lg">
+      Balance: <span class="font-bold">{{ balance }}</span>
+    </p>
 
     <div class="flex space-x-6 mb-6 items-center">
       <!-- Reels -->
@@ -167,33 +139,20 @@ function spin() {
       </div>
 
       <!-- Lever -->
-      <div
-        class="w-6 h-40 bg-gray-600 rounded-full relative select-none"
-        :class="spinning ? 'cursor-default' : 'cursor-pointer'"
-        @mousedown="startDrag"
-        @touchstart.prevent="startDrag"
-        @click="!spinning && pullLever()"
-      >
-        <div
-          class="w-8 h-8 bg-red-500 rounded-full absolute left-1/2 transform -translate-x-1/2 transition-[top] duration-200 ease-out"
-          :style="{ top: leverPulled ? '140px' : leverPosition + 'px' }"
-        ></div>
-      </div>
+      <Lever :spinning="spinning" @pull="handlePull" />
     </div>
 
     <button
-      @click="pullLever"
+      @click="handlePull"
       :disabled="spinning"
       class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-lg text-lg font-semibold transition-colors"
       :class="spinning ? 'cursor-default' : 'cursor-pointer'"
     >
-      {{ spinning ? 'Spinning...' : 'Spin' }}
+      {{ spinning ? 'Spinning...' : `Spin (-${betAmount})` }}
     </button>
 
     <div class="mt-4 h-8 flex items-center justify-center">
-      <p v-if="result" class="text-xl font-medium">
-        {{ result }}
-      </p>
+      <p v-if="result" class="text-xl font-medium">{{ result }}</p>
     </div>
   </div>
 </template>
@@ -206,7 +165,7 @@ function spin() {
     opacity 0.25s linear;
 }
 .slide-enter-from {
-  transform: translateY(-50%); /* slide in from top */
+  transform: translateY(-50%);
   opacity: 0.75;
 }
 .slide-enter-to {
@@ -218,11 +177,7 @@ function spin() {
   opacity: 1;
 }
 .slide-leave-to {
-  transform: translateY(50%); /* slide out to bottom */
+  transform: translateY(50%);
   opacity: 0.75;
-}
-
-.lever-knob {
-  transition: top 0.3s ease-in-out;
 }
 </style>
