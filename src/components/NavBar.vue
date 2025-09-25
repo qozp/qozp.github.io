@@ -1,7 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const isOpen = ref(false)
+
+onMounted(() => {
+  const script = document.createElement('script')
+  script.type = 'text/javascript'
+  script.src = 'https://pub27.bravenet.com/counter/code.php?id=410705&usernum=2244683182&cpv=3'
+
+  // inject into the placeholder
+  const container = document.getElementById('bravenet-counter')
+  if (container) {
+    container.appendChild(script)
+  }
+})
 </script>
 
 <template>
@@ -19,7 +31,6 @@ const isOpen = ref(false)
         >
           Countdown
         </RouterLink>
-
         <RouterLink
           to="/slots"
           class="hover:text-blue-300"
@@ -39,6 +50,9 @@ const isOpen = ref(false)
           Looking for Isaiah Pham?
         </a>
       </div>
+
+      <!-- Counter in top-right -->
+      <div id="bravenet-counter" class="ml-4"></div>
 
       <!-- Mobile Hamburger -->
       <button class="md:hidden flex flex-col gap-1" @click="isOpen = !isOpen">
