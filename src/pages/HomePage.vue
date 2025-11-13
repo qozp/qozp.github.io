@@ -6,12 +6,12 @@
 
     <!-- Countdown Button -->
     <div class="flex flex-row items-center justify-center space-x-4">
-      <!-- <RouterLink
+      <RouterLink
         to="/countdown"
         class="px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-lg text-white text-lg font-semibold transition-colors"
       >
         Go to Countdown
-      </RouterLink> -->
+      </RouterLink>
 
       <!-- Play Slots Button -->
       <RouterLink
