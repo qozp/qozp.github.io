@@ -184,7 +184,7 @@ watch(carPosition, (pos) => {
   <div
     class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-purple-900 to-indigo-700 text-white text-center px-4"
   >
-    <h1 class="text-4xl font-bold mb-6 animate-pulse">Countdown to Fall Break!</h1>
+    <h1 class="text-4xl font-bold mb-6 animate-pulse">Countdown to Winter Break!</h1>
 
     <!-- Countdown Grid -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-lg mb-6">
