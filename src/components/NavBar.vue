@@ -59,14 +59,14 @@ const isOpen = ref(false)
         Home
       </RouterLink>
 
-      <!-- <RouterLink
+      <RouterLink
         to="/countdown"
         class="text-lg hover:text-blue-300"
         active-class="text-blue-400 font-semibold"
         @click="isOpen = false"
       >
         Countdown
-      </RouterLink> -->
+      </RouterLink>
 
       <RouterLink
         to="/slots"
