@@ -35,7 +35,7 @@ function generateDriveCoords(
 
 // Dates
 const startDate = DateTime.fromISO('2025-11-13T06:00:00', { zone: 'America/New_York' }).toMillis()
-const targetDate = DateTime.fromISO('2025-12-13T06:00:00', { zone: 'America/New_York' }).toMillis()
+const targetDate = DateTime.fromISO('2025-12-14T06:00:00', { zone: 'America/New_York' }).toMillis()
 
 // Flight coords (LAX → DCA as example)
 const startCoords: [number, number] = [33.942791, -118.410042] // LAX
